@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "crome"
+version = "0.1.0"
+description = "CROME"
+authors = ["Piergiuseppe Mallozzi <piergiuseppe.mallozzi@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aenum = "^3.1.15"
+
+[tool.poetry.dev-dependencies]
+# Add any development-specific dependencies here
+
+[build-system]
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"
