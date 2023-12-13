@@ -73,6 +73,7 @@ class Bool(Specification):
 
     @property
     def formula(self) -> str:
+        res = self.expression.to_dot()
         return dot_to_spot_string(self.expression.to_dot())
 
     def __str__(self):

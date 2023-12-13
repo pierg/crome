@@ -32,6 +32,7 @@ def combine_atoms(atoms: list[Node], operation: str) -> str:
 
 
 def dot_to_spot_string(dot_format_string: str) -> str:
+    print(dot_format_string)
     graph = pgv.AGraph(string=dot_format_string)
     labels = set()
     for n in graph.nodes():

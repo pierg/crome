@@ -82,9 +82,11 @@ class LTL(Specification):
 
     def _initialize_external_libraries_objects(self, formula: str):
         expression = transform_spot_tree(spot.formula(formula))
+        print(expression)
         object.__setattr__(self, "_expression", expression)
         if self._boolean is None:
             atom_tree = gen_atoms_tree(spot_f=self.expression)
+            print(self.expression)
             boolean = Bool(
                 _init_formula=boolean_tree_to_formula(atom_tree), _tree=atom_tree
             )
