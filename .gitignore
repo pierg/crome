@@ -1,3 +1,6 @@
+# crome output
+crome/output/
+
 .idea/
 __pycache__/
 *.py[cod]
