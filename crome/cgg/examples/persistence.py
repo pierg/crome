@@ -1,7 +1,7 @@
 from crome.synthesis.world import World
-from src.crome_cgg.cgg import Cgg
-from src.crome_cgg.goal import Goal
-from src.crome_cgg.tools.persistence import (
+from crome.cgg.cgg import Cgg
+from crome.cgg.goal import Goal
+from crome.cgg.tools.persistence import (
     dump_cgg,
     dump_goals,
     dump_world,
