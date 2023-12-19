@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from functools import reduce
 from pathlib import Path
 
 from crome.logic.specification.temporal import LTL
@@ -14,7 +13,6 @@ class PControllers:
     name: str = ""
     controllers: set[Controller] = field(default_factory=set)
     spec: ControllerSpec = None
-    _synth_time: float = field(init=False, default_factory=float)
 
     def __post_init__(self):
         self.name = f"{self.name}_p"
@@ -62,4 +60,4 @@ class PControllers:
 
     @property
     def synth_time(self) -> float:
-        return reduce((lambda x, y: x + y), [c.synth_time for c in self.controllers])
+        return sum(c.synth_time for c in self.controllers)
