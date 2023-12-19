@@ -113,8 +113,9 @@ class Mealy:
             if edge.get_source() == "I":
                 states[edge.get_destination()].set_as_initial()
             else:
+                edge_label_sanitized = edge.get_attributes()["label"].replace('"', "").split("/")[1]
                 transitions = extract_transitions(
-                    edge.get_attributes()["label"], input_aps, output_aps
+                    edge_label_sanitized, input_aps, output_aps
                 )
                 for ins, outs in transitions:
                     source = states[edge.get_source()]

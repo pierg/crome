@@ -1,5 +1,6 @@
-# crome output
+# crome outputs
 crome/output/
+crome/cgg/output/
 
 .idea/
 __pycache__/
