@@ -8,7 +8,7 @@ from crome.cgg.goal.operations._shared import (
     generate_goal_operations_name_description,
     generate_shared_world,
 )
-from crome.cgg.operations.conjunction import conjunction
+from crome.contracts.operations.conjunction import conjunction
 
 
 def g_conjunction(goals: set[Goal], cgg: Cgg | None = None) -> Goal:

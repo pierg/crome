@@ -8,7 +8,7 @@ from crome.cgg.goal.operations._shared import (
     generate_goal_operations_name_description,
     generate_shared_world,
 )
-from crome.cgg.operations.composition import composition
+from crome.contracts.operations.composition import composition
 
 
 def g_composition(goals: set[Goal], cgg: Cgg | None = None) -> Goal:

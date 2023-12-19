@@ -8,7 +8,7 @@ from crome.cgg.goal.operations._shared import (
     generate_goal_operations_name_description,
     generate_shared_world,
 )
-from crome.cgg.operations.merging import merging
+from crome.contracts.operations.merging import merging
 
 
 def g_merging(goals: set[Goal], cgg: Cgg | None = None) -> Goal:

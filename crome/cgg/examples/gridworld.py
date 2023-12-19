@@ -1,7 +1,7 @@
 from crome.synthesis.world import World
-from src.crome_cgg.cgg import Cgg
-from src.crome_cgg.cgg.exceptions import CggException
-from src.crome_cgg.goal import Goal
+from crome.cgg.cgg import Cgg
+from crome.cgg.cgg.exceptions import CggException
+from crome.cgg.goal import Goal
 
 from crome.contracts.contract import Contract
 from crome.logic.patterns.robotic_movement import StrictOrderedPatrolling
