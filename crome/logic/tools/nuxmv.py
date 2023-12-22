@@ -146,7 +146,7 @@ def _launch_nuxmv() -> List[str]:
     try:
         """ "Trying nuXmv locally."""
         output = subprocess.check_output(
-            ["nuXmv", file_path], encoding="UTF-8", stderr=subprocess.DEVNULL
+            ["NuSMV", file_path], encoding="UTF-8", stderr=subprocess.DEVNULL
         ).splitlines()
 
     except Exception:
