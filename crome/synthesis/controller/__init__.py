@@ -155,11 +155,11 @@ class Controller:
         if format in ["png", "eps", "pdf"]:
             (graph,) = pydot.graph_from_dot_data(self._spot_automaton.to_str("dot"))
             graph.write_png(absolute_folder_path / file_name)
-            print(f"{file_name} saved in {output_folder_synthesis}")
+            print(f"{file_name} saved in {absolute_folder_path}")
         elif format in ["eps", "pdf"]:
             (graph,) = pydot.graph_from_dot_data(self._spot_automaton.to_str("dot"))
             graph.imsave(fname=absolute_folder_path / file_name, format=format)
-            print(f"{file_name} saved in {output_folder_synthesis}")
+            print(f"{file_name} saved in {absolute_folder_path}")
         elif format in ["hoa", "dot", "spin", "lbtt"]:
             file_path = save_to_file(
                 file_content=self._spot_automaton.to_str(format), file_name=file_name,
