@@ -13,12 +13,8 @@ from crome.synthesis.controller.exceptions import UnknownStrixResponse
 from crome.synthesis.world import World
 
 
-def strix_example():
-    ins = "request_0, request_m"
-    outs = "grant_0"
-    assumptions = ""
-    guarantees = "! GF! request_m | G(request_0 -> Fgrant_0)"
-
+def strix_example(assumptions="", guarantees="! GF! request_m | G(request_0 -> Fgrant_0)", ins="request_0, request_m",
+                  outs="grant_0"):
     strix_specs = f"-f '{implies_(assumptions, guarantees)}' --ins='{ins}' --outs='{outs}'"
 
     strix_bin = "strix"
@@ -109,7 +105,7 @@ if __name__ == '__main__':
                      "(r3 -> X(r3 | r4 | r5)) & (r4 -> X(r3 | r4 | r5))")
     # TODO ^ esto sería el mundo de la grilla no? cómo podemos sacar la fórmula desde el gridworld?
     rho_s_1 = LTL("(!r2 U r1) & G(r2 -> X(!r2 U r1)) & G(r1 -> X(!r1 U r2))")  # day_safety_system TODO ok?
-    rho_s_2 = LTL("(!r4 U r3) & G(r4 -> X(!r4 U r3)) & G(r3 -> X(!r3 U r4))") # night_safety_system
+    rho_s_2 = LTL("(!r4 U r3) & G(r4 -> X(!r4 U r3)) & G(r3 -> X(!r3 U r4))")  # night_safety_system
 
     # building the bridge
     t1 = safety_env
