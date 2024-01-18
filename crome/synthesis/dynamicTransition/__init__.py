@@ -7,13 +7,13 @@ from pathlib import Path
 import pydot
 import spot
 
-from crome.contracts.contract import Contract
-from crome.logic.patterns.robotic_movement import StrictOrderedPatrolling
 from crome.logic.specification.string_logic import implies_
 from crome.logic.specification.temporal import LTL
 from crome.logic.tools.logic import Logic
 from crome.synthesis.controller import Controller, Mealy
 from crome.synthesis.controller.exceptions import UnknownStrixResponse
+
+from crome.synthesis.dynamicTransition.examples import example
 
 
 def generate_controller_strix(assumptions="", guarantees="", ins="", outs=""):
@@ -59,37 +59,25 @@ def generate_controller_strix(assumptions="", guarantees="", ins="", outs=""):
     mealy_controller = Mealy.from_pydotgraph(pydotgraph, input_aps=ins, output_aps=outs)
     return mealy_controller
 
-
-def prepareLTL():
-    controller_name = "arbiter"
-    spec_path = Path(os.path.abspath(os.path.dirname(__file__)))
-    controller_spec = spec_path / f"spec.txt"
-
-    print(f"controller selected: {controller_spec}")
-
-    # METHOD 1: MONOLITHIC SYNTHESIS FROM STRIX
-    controller = Controller.from_file(file_path=controller_spec, name=controller_name)
-    print(f"Monolithic synthesis realized in {controller.synth_time} s")
-
-
 class DynamicTransition:
 
-    def __init__(self, rho_1, rho_2, current_pos, target_pos, switch_condition):
+    def __init__(self, rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars, output_vars):
         self.rho_1 = rho_1
         self.rho_2 = rho_2
         self.current_pos = current_pos
         self.target_pos = target_pos
         self.switch_condition = switch_condition
+        self.input_vars = input_vars
+        self.output_vars = output_vars
 
     # Generate bridge controller solving this game:
     # === true => current_pos & rho_s & F target_pos
     def generate_bridge_controller(self):
         # TODO: read output_variables from Contract parameter
-        output_variables = "r1,r2,r3,r4,r5, allowed, switch"
         rho_s = self.dynamic_switch_rules()
         controller = generate_controller_strix("", f"{str(self.current_pos)} & {rho_s} & (F ({self.target_pos}))",
                                                ins="",
-                                               outs=output_variables)
+                                               outs=self.output_vars)
 
         return controller
 
@@ -109,24 +97,9 @@ class DynamicTransition:
 
 
 ## Reglas puntuales de este ejemplo
-## TODO: pasarlas a otro archivo o usar directamente de los contratos
-exclude_rules = []
-for i in range(1,6):
-    exclude_rule = f"r{i}"
-    for j in range(1,6):
-        if i!=j:
-            exclude_rule += f" & !r{j}"
-    exclude_rules.append("(" + exclude_rule + ")")
-safety_exclude = ("G " + Logic.or_([safety_exclude_rule for safety_exclude_rule in exclude_rules]))
+rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars, output_vars = example.generateBasicExample()
 
 
-# TODO ^ esto sería el mundo de la grilla no? cómo podemos sacar la fórmula desde el gridworld?
-rho_1 = LTL("(!r2 U r1) & G(r2 -> X(!r2 U r1)) & G(r1 -> X(!r1 U r2)) & " + str(safety_exclude))  # day_safety_system
-rho_2 = LTL("(!r4 U r3) & G(r4 -> X(!r4 U r3)) & G(r3 -> X(!r3 U r4)) & " + str(safety_exclude))  # night_safety_system
-current_pos=LTL("r1 & !r2 & !r3 & !r4 & !r5")
-target_pos=LTL("!r1 & !r2 & r3 & !r4 & !r5")
-switch_condition = True
-
-bridgeGenerator = DynamicTransition(rho_1, rho_2, current_pos, target_pos, switch_condition)
+bridgeGenerator = DynamicTransition(rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars, output_vars)
 controller = bridgeGenerator.generate_bridge_controller()
 pass
