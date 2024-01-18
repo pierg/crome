@@ -26,7 +26,7 @@ def extract_transitions(
 ) -> set[tuple[Atoms, Atoms]]:
     alternatives: set[tuple[Atoms, Atoms]] = set()
 
-    if pyeda_syntax_fix(formula) == "1":
+    if pyeda_syntax_fix(formula).strip() == "1":
         return {(Atoms.any(), Atoms.any())}
 
     boolean = Bool(formula)
