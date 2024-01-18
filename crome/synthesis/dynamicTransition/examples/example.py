@@ -1,5 +1,6 @@
 from crome.logic.specification.temporal import LTL
 from crome.logic.tools.logic import Logic
+from crome.synthesis.dynamicTransition.dynamicTransitionBuilder import DynamicTransitionBuilder
 
 
 def generateBasicExample():
@@ -47,7 +48,11 @@ def generateRobotPatrollingExample():
         exclude_rules.append("(" + exclude_rule + ")")
     safety_exclude = ("G " + Logic.or_([safety_exclude_rule for safety_exclude_rule in exclude_rules]))
 
-
-
-
     return
+
+## Reglas puntuales de este ejemplo
+rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars, output_vars = example.generateBasicExample()
+
+bridgeGenerator = DynamicTransitionBuilder(rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars,
+                                           output_vars)
+controller = bridgeGenerator.build_transition_controller()
