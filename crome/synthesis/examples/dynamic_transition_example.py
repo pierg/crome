@@ -1,4 +1,15 @@
+import subprocess
+import time
 
+import pydot
+import spot
+
+from crome.logic.patterns.robotic_movement import StrictOrderedPatrolling
+from crome.logic.specification.string_logic import implies_
+from crome.logic.specification.temporal import LTL
+from crome.logic.tools.logic import Logic
+from crome.logic.typelement.robotic import BooleanAction, BooleanLocation, BooleanSensor, BooleanContext
+from crome.logic.typeset import Typeset
 from crome.synthesis.controller import Mealy, ControllerSpec, Controller
 from crome.synthesis.controller.exceptions import UnknownStrixResponse
 from crome.synthesis.world import World
@@ -90,82 +101,33 @@ if __name__ == '__main__':
         _typeset=gridworld.typeset,
     )
 
-    """
-    day_patrol_12: GF(r1 & Fr2) & (!r2 U r1) & G(r2 -> X(!r2 U r1)) & G(r1 -> X(!r1 U r2))
-    night_patrol_34: GF(r3 & Fr4) & (!r4 U r3) & G(r4 -> X(!r4 U r3)) & G(r3 -> X(!r3 U r4))
-    """
-    # print(f"day_patrol_12: {day_patrol_12}")
-    # print(f"night_patrol_34: {night_patrol_34}")
-
-    # Safety global
-    safety_env = LTL("(r1 -> X(r1 | r2 | r5)) & (r2 -> X(r1 | r2 | r5)) & (r5 -> X(r1 | r2 | r5 | r3 | r4)) & "
-                     "(r3 -> X(r3 | r4 | r5)) & (r4 -> X(r3 | r4 | r5))")
-
-    # TODO ^ esto sería el mundo de la grilla no? cómo podemos sacar la fórmula desde el gridworld?
-    rho_s_1 = LTL("(!r2 U r1) & G(r2 -> X(!r2 U r1)) & G(r1 -> X(!r1 U r2))")  # day_safety_system TODO ok?
-    rho_s_2 = LTL("(!r4 U r3) & G(r4 -> X(!r4 U r3)) & G(r3 -> X(!r3 U r4))")  # night_safety_system
-
-    # building the bridge
-    # t1 = safety_env
-    t1 = Logic.or_([str(rho_s_1), str(rho_s_2)])
-    t2 = LTL(f"switch -> X({rho_s_2})")
-    # add switch and allowed to typeset TODO ok?
-
+    # BRIDGE BUILDING
     gridworld.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
 
-    s1 = LTL("(~switch & X(switch)) -> X(allowed)")
-    s2 = LTL("switch -> X(switch)")
-    s3 = LTL(f"~{rho_s_1} -> X(switch)")
+    rho_s_1 = day_patrol_12
+    rho_s_2 = night_patrol_34
+
+    # building the bridge
+    t1 = Logic.or_([str(rho_s_1), str(rho_s_2)])
+    t2 = LTL(f"switch -> X({rho_s_2})", _typeset=gridworld.typeset)
+
+    s1 = LTL("(~switch & X(switch)) -> X(allowed)", _typeset=gridworld.typeset)
+    s2 = LTL("switch -> X(switch)", _typeset=gridworld.typeset)
+    s3 = LTL(f"~{rho_s_1} -> X(switch)", _typeset=gridworld.typeset)
     p1 = LTL(f"X(allowed) -> (({rho_s_2}) | (allowed & {rho_s_2})) & "
-             f"(({rho_s_2}) | (allowed & {rho_s_2})) -> X(allowed)")  # TODO hay un iff?
+             f"(({rho_s_2}) | (allowed & {rho_s_2})) -> X(allowed)", _typeset=gridworld.typeset)  # TODO hay un iff?
     # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
 
-    exclude_rules = []
+    rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
 
-    for i in range(1, 6):
-        exclude_rule = f"r{i}"
-        for j in range(1, 6):
-            if i != j:
-                exclude_rule += f" & !r{j}"
-        exclude_rules.append("(" + exclude_rule + ")")
+    current_pos = LTL("r1 & !r2 & !r3 & !r4 & !r5", _typeset=gridworld.typeset)
+    target_pos = LTL("!r1 & !r2 & r3 & !r4 & !r5", _typeset=gridworld.typeset)
 
-    safety_exclude = ("G " +
-                      Logic.or_([safety_exclude_rule for safety_exclude_rule in exclude_rules]))
-
-    rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1, safety_exclude]])
-
-    current_pos=LTL("r1 & !r2 & !r3 & !r4 & !r5")
-    target_pos=LTL("!r1 & !r2 & r3 & !r4 & !r5")
-
-    ##
-    ## current_pos -> rho_s & F target_pos
-    ##
-
-    output_variables="r1,r2,r3,r4,r5, allowed, switch"
-    controller = strix_example("", f"{str(current_pos)} & {rho_s} & (F ({target_pos}))", ins="", outs=output_variables)
-
-
-
-    print(f"t1: {t1}")
-    print(f"t2: {t2}")
-    print(f"s1: {s1}")
-    print(f"s2: {s2}")
-    print(f"s3: {s3}")
-    print(f"p1: {p1}")
-    print(f"rho_s: {rho_s}")
-
-    ##
-    ## current_pos -> rho_s & F target_pos
-    ##
-
-    assumptions = "true"
-    guarantees = f"{str(current_pos)} & {rho_s} & (F ({target_pos}))"
-    input_variables = ""
-    output_variables = "r1,r2,r3,r4,r5, allowed, switch"
-    controller = strix_example(assumptions, guarantees, input_variables, output_variables)
+    assumptions = LTL("TRUE", _typeset=gridworld.typeset)
+    guarantees = LTL(f"{str(current_pos)} & {rho_s} & (F ({target_pos}))", _typeset=gridworld.typeset)
 
     controller_spec_example = ControllerSpec.from_ltl(
-        LTL(assumptions), LTL(guarantees, _typeset=gridworld.typeset), gridworld
+        assumptions, guarantees, gridworld
     )
 
     controller_example = Controller(
