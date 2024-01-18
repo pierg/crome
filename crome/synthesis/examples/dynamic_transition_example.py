@@ -1,16 +1,5 @@
-import subprocess
-import time
 
-import pydot
-import spot
-
-from crome.logic.patterns.robotic_movement import StrictOrderedPatrolling
-from crome.logic.specification.string_logic import implies_
-from crome.logic.specification.temporal import LTL
-from crome.logic.tools.logic import Logic
-from crome.logic.typelement.robotic import BooleanAction, BooleanLocation, BooleanSensor, BooleanContext
-from crome.logic.typeset import Typeset
-from crome.synthesis.controller import Mealy
+from crome.synthesis.controller import Mealy, ControllerSpec, Controller
 from crome.synthesis.controller.exceptions import UnknownStrixResponse
 from crome.synthesis.world import World
 
@@ -121,7 +110,9 @@ if __name__ == '__main__':
     t1 = Logic.or_([str(rho_s_1), str(rho_s_2)])
     t2 = LTL(f"switch -> X({rho_s_2})")
     # add switch and allowed to typeset TODO ok?
-    gridworld.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanContext(name="allowed")})
+
+    gridworld.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
+
     s1 = LTL("(~switch & X(switch)) -> X(allowed)")
     s2 = LTL("switch -> X(switch)")
     s3 = LTL(f"~{rho_s_1} -> X(switch)")
@@ -130,10 +121,11 @@ if __name__ == '__main__':
     # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
 
     exclude_rules = []
-    for i in range(1,6):
+
+    for i in range(1, 6):
         exclude_rule = f"r{i}"
-        for j in range(1,6):
-            if i!=j:
+        for j in range(1, 6):
+            if i != j:
                 exclude_rule += f" & !r{j}"
         exclude_rules.append("(" + exclude_rule + ")")
 
@@ -162,5 +154,22 @@ if __name__ == '__main__':
     print(f"p1: {p1}")
     print(f"rho_s: {rho_s}")
 
-    # cómo sería el target?
-    
+    ##
+    ## current_pos -> rho_s & F target_pos
+    ##
+
+    assumptions = "true"
+    guarantees = f"{str(current_pos)} & {rho_s} & (F ({target_pos}))"
+    input_variables = ""
+    output_variables = "r1,r2,r3,r4,r5, allowed, switch"
+    controller = strix_example(assumptions, guarantees, input_variables, output_variables)
+
+    controller_spec_example = ControllerSpec.from_ltl(
+        LTL(assumptions), LTL(guarantees, _typeset=gridworld.typeset), gridworld
+    )
+
+    controller_example = Controller(
+        name=f"example_controller", spec=controller_spec_example, _typeset=gridworld.typeset
+    )
+
+    controller_example.save("dot", "example_controller.dot")
