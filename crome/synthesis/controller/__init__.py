@@ -124,8 +124,9 @@ class Controller:
             self.mealy.react()
         return self.mealy.history
 
+    @staticmethod
     def generate_from_spec(
-            self, a: str, g: str, i: str, o: str
+            a: str, g: str, i: str, o: str
     ) -> tuple[bool, str, float]:
 
         print(

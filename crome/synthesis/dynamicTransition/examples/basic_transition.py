@@ -39,6 +39,7 @@ if __name__ == '__main__':
     )
 
     # CONTEXT/CONTRACTS only LTL part TODO create complete contracts for the example
+    # TODO This should be safety rules not liveness
     day_patrol_12 = LTL(
         StrictOrderedPatrolling(locations=["r1", "r2"]).__str__(),
         _typeset=gridworld.typeset,
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     current_pos = LTL("r1 & !r2 & !r3 & !r4 & !r5", _typeset=gridworld.typeset)
     target_pos = LTL("!r1 & !r2 & r3 & !r4 & !r5", _typeset=gridworld.typeset)
 
-    dtb_ctx1_to_ctx2 = DynamicTransitionBuilder(day_patrol_12, night_patrol_34,
-                                                switch_condition=LTL("TRUE"), world_1=gridworld, world_2=gridworld)
+    dtb_ctx1_to_ctx2 = DynamicTransitionBuilder(day_patrol_12, night_patrol_34, switch_condition=LTL("TRUE"),
+                                                world_1=gridworld, world_2=gridworld)
 
     transition_controller = dtb_ctx1_to_ctx2.build_transition_controller(current_pos, target_pos)

@@ -53,6 +53,5 @@ def generateRobotPatrollingExample():
 ## Reglas puntuales de este ejemplo
 rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars, output_vars = example.generateBasicExample()
 
-bridgeGenerator = DynamicTransitionBuilder(rho_1, rho_2, current_pos, target_pos, switch_condition, input_vars,
-                                           output_vars)
+bridgeGenerator = DynamicTransitionBuilder(rho_1, rho_2, current_pos, target_pos, switch_condition)
 controller = bridgeGenerator.build_transition_controller()
