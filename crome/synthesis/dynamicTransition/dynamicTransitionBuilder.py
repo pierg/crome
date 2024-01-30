@@ -1,3 +1,5 @@
+import itertools
+
 import pydot
 import spot
 
@@ -65,13 +67,36 @@ class DynamicTransitionBuilder:
         """
         # TODO rewrite because it's notation abuse, our guarantees already contains the assumptions
         assumptions = LTL("TRUE", _typeset=self.transition_world.typeset)
-        guarantees = LTL(f"{current_pos} & {self.rho_s} & (F ({target_pos}))", _typeset=self.transition_world.typeset)
+        guarantees = LTL(f"({current_pos}) & {self.rho_s} & (F ({target_pos}))", _typeset=self.transition_world.typeset)
 
         controller_spec = ControllerSpec.from_ltl(assumptions, guarantees, self.transition_world)
 
         controller = Controller(name=controller_name, spec=controller_spec, _typeset=self.transition_world.typeset)
 
         controller.save("dot", controller_name)  # TODO remove after development, only for debugging
+
+        ####  building it manually
+        from crome.synthesis.controller import generate_controller
+        from crome.synthesis.tools.crome_io import save_to_file
+        from crome.synthesis.tools import output_folder_synthesis
+
+        a = str(assumptions)
+        a = "G((! day & night) | (day & ! night))"
+        # g = str(guarantees)
+        g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F ({target_pos}))"
+        i, o = self.transition_world.typeset.extract_inputs_outputs(string=True)
+        i = ','.join(i)
+        o = ','.join(o)
+        _, automaton, _ = generate_controller(a, g, i, o)
+        spot_automaton = spot.automaton(automaton)
+        save_to_file(
+            file_content=spot_automaton.to_str("dot"), file_name="a_mano.dot",
+            absolute_folder_path=output_folder_synthesis
+        )
+        gra = pydot.graph_from_dot_file("crome/output/a_mano.dot")[0]
+        gra.write_png("a_mano.png")
+        ####
+
         return controller
 
     def _get_dynamic_transition_rules(self):
@@ -80,46 +105,54 @@ class DynamicTransitionBuilder:
         Section 4.1 Bridge-Controller Construction
         Dynamic Update for Synthesized GR(1) Controllers, Maoz, Amram paper.
         """
-        t1 = Logic.or_([str(self.rho_1), str(self.rho_2)])
+        t1 = Logic.or_([self.rho_1, self.rho_2])
         t2 = LTL(f"switch -> X({self.rho_2})", _typeset=self.transition_world.typeset)
 
         # TODO the typeset defining this bridge should be world 1, 2 or a mix of both?
         s1 = LTL("(~switch & X(switch)) -> X(allowed)", _typeset=self.transition_world.typeset)
         s2 = LTL("switch -> X(switch)", _typeset=self.transition_world.typeset)
         s3 = LTL(f"~{self.rho_1} -> X(switch)", _typeset=self.transition_world.typeset)
-        p1 = LTL(f"X(allowed) -> (({self.rho_2}) | (allowed & {self.rho_2})) & "
-                 f"(({self.rho_2}) | (allowed & {self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
+        p1 = LTL(f"X(allowed) -> (({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) & "
+                 f"(({self.switch_condition} & {self.rho_2})| (allowed & {self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
         # TODO is there an iff?
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
+
+        ####  new try
+        s1 = LTL("(~switch & X(switch)) -> allowed", _typeset=self.transition_world.typeset)
+        # p1 = LTL(f"(({self.switch_condition}) & ({self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
+        ####
 
         rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
         return rho_s
 
     @staticmethod
     def _get_safety_from(contract_guarantees: LTL, world: World,
-                         contract_assumptions=LTL("TRUE")) -> LTL:
+                         contract_assumptions=LTL("TRUE")) -> str:
         typeset_c, typeset_u = world.typeset.split_controllable_uncontrollable
-        a_mtx = extract_mutex_rules(typeset_u)
-        a_adj = extract_adjacency_rules(typeset_u,)
+
+        # assumptions
+        a_mtx, _ = extract_mutex_rules(typeset_u, output_list=True)
+        a_adj, t = extract_adjacency_rules(typeset_u, output_list=True)
         a_rules, _ = world.get_rules(environment=True)
-        g_mtx = extract_mutex_rules(typeset_c)
-        g_adj = extract_adjacency_rules(typeset_c)
+
+        # guarantees
+        g_mtx, _ = extract_mutex_rules(typeset_c, output_list=True)
+        g_adj, _ = extract_adjacency_rules(typeset_c, output_list=True)
         g_rules, _ = world.get_rules(environment=False)
 
-        if len(a_rules) == 0:
-            a_rules = LTL("TRUE", _typeset=world.typeset)
-        else:
-            a_rules = Logic.and_([str(x) for x in a_rules])
-
-        if len(g_rules) == 0:
-            g_rules = LTL("TRUE", _typeset=world.typeset)
-        else:
-            g_rules = Logic.and_([str(x) for x in g_rules])
-
         # TODO make Logic be able to process LTL (and maybe return LTL)
-        assumptions = LTL(Logic.and_([str(x) for x in [a_mtx, a_adj, a_rules, contract_assumptions]]),
-                          _typeset=world.typeset)
-        guarantees = LTL(Logic.and_([str(x) for x in [g_mtx, g_adj, g_rules, contract_guarantees]]),
-                         _typeset=world.typeset)
+        assumptions = Logic.and_(list(itertools.chain(
+            [str(contract_assumptions)],
+            a_adj,
+            a_mtx,
+            [r[0] for r in a_rules]
+        )))
 
-        return LTL(Logic.implies_(str(assumptions), str(guarantees)))
+        guarantees = Logic.and_(list(itertools.chain(
+            [str(contract_guarantees)],
+            g_adj,
+            g_mtx,
+            [r[0] for r in g_rules]
+        )))
+
+        return Logic.implies_(str(assumptions), str(guarantees))
