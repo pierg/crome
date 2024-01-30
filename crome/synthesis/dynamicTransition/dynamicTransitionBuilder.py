@@ -52,7 +52,7 @@ class DynamicTransitionBuilder:
         # TODO is this necessary? should we remove it afterwards?
         # self.world_1.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
         # self.world_2.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
-        self.transition_world = world_1
+        # self.transition_world = world_1
         self.transition_world.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
 
         self.rho_s = self._get_dynamic_transition_rules()
@@ -67,24 +67,12 @@ class DynamicTransitionBuilder:
         assumptions = LTL("TRUE", _typeset=self.transition_world.typeset)
         guarantees = LTL(f"{current_pos} & {self.rho_s} & (F ({target_pos}))", _typeset=self.transition_world.typeset)
 
-        # controller_spec = ControllerSpec.from_ltl(assumptions, guarantees, self.transition_world)
-        i, o = self.transition_world.typeset.extract_inputs_outputs()
-        inputs = ', '.join([x.name for x in i])
-        outputs = ', '.join([x.name for x in o])
+        controller_spec = ControllerSpec.from_ltl(assumptions, guarantees, self.transition_world)
 
-        _, controller, _ = Controller.generate_from_spec(str(assumptions), str(guarantees), inputs, outputs)
+        controller = Controller(name=controller_name, spec=controller_spec, _typeset=self.transition_world.typeset)
 
-        spot_automaton = spot.automaton(controller)
-
-        pydotgraph = pydot.graph_from_dot_data(spot_automaton.to_str("dot"))[0]
-        mealy = Mealy.from_pydotgraph(
-            pydotgraph, input_aps=i, output_aps=o
-        )
-
-        # TODO remove after development, only for debugging
-        pydotgraph.write(controller_name + ".dot")
-
-        return mealy
+        controller.save("dot", controller_name)  # TODO remove after development, only for debugging
+        return controller
 
     def _get_dynamic_transition_rules(self):
         """
