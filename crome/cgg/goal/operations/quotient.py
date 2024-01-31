@@ -8,7 +8,7 @@ from crome.cgg.goal.operations._shared import (
     generate_goal_operations_name_description,
     generate_shared_world,
 )
-from crome.cgg.operations.quotient import quotient
+from crome.contracts.operations.quotient import quotient
 
 
 def g_quotient(dividend: Goal, divisor: Goal, cgg: Cgg | None = None) -> Goal:

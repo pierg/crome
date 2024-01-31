@@ -8,7 +8,7 @@ from crome.cgg.goal.operations._shared import (
     generate_goal_operations_name_description,
     generate_shared_world,
 )
-from crome.cgg.operations.separation import separation
+from crome.contracts.operations.separation import separation
 
 
 def g_separation(dividend: Goal, divisor: Goal, cgg: Cgg | None = None) -> Goal:
