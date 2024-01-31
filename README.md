@@ -48,9 +48,30 @@ Follow these steps to set up and run the project:
     poetry install
     ```
 
+3. **Install Web Interface**:
+
+    ```bash
+    cd web/frontend
+    npm install
+    ```
+
 ### Running the Project
 
 Once the environment is set up, you can run your project using your preferred method.
+
+
+1. **Run the Frontend**:
+
+    ```bash
+    cd web/frontend
+    npm start
+    ```
+
+1. **Run the Backend**:
+
+    ```bash
+    python web/backend/app.py --dev=True
+    ```
 
 ### Visual Studio Code Setup
 
