@@ -83,7 +83,7 @@ class DynamicTransitionBuilder:
         a = str(assumptions)
         a = "G((! day & night) | (day & ! night))"
         # g = str(guarantees)
-        g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F ({target_pos}))"
+        g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F (switch & ({target_pos})))"
         i, o = self.transition_world.typeset.extract_inputs_outputs(string=True)
         i = ','.join(i)
         o = ','.join(o)
@@ -106,19 +106,19 @@ class DynamicTransitionBuilder:
         Dynamic Update for Synthesized GR(1) Controllers, Maoz, Amram paper.
         """
         t1 = Logic.or_([self.rho_1, self.rho_2])
-        t2 = LTL(f"switch -> X({self.rho_2})", _typeset=self.transition_world.typeset)
+        t2 = f"switch -> {self.rho_2}"
 
         # TODO the typeset defining this bridge should be world 1, 2 or a mix of both?
-        s1 = LTL("(~switch & X(switch)) -> X(allowed)", _typeset=self.transition_world.typeset)
-        s2 = LTL("switch -> X(switch)", _typeset=self.transition_world.typeset)
-        s3 = LTL(f"~{self.rho_1} -> X(switch)", _typeset=self.transition_world.typeset)
-        p1 = LTL(f"X(allowed) -> (({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) & "
-                 f"(({self.switch_condition} & {self.rho_2})| (allowed & {self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
+        s1 = "(!switch & X(switch)) -> X(allowed)"
+        s2 = "switch -> X(switch)"
+        s3 = f"!{self.rho_1} -> X(switch)"
+        p1 = (f"X(allowed) -> (({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) & "
+              f"(({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) -> X(allowed)")
         # TODO is there an iff?
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
 
         ####  new try
-        s1 = LTL("(~switch & X(switch)) -> allowed", _typeset=self.transition_world.typeset)
+        # s1 = LTL("(~switch & X(switch)) -> allowed", _typeset=self.transition_world.typeset)
         # p1 = LTL(f"(({self.switch_condition}) & ({self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
         ####
 
