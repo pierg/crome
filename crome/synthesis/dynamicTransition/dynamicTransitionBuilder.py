@@ -8,96 +8,62 @@ from crome.logic.specification.temporal import LTL
 from crome.logic.tools.logic import Logic
 from crome.logic.typelement.robotic import BooleanAction, BooleanLocation, BooleanSensor, BooleanContext
 from crome.logic.typeset import Typeset
-from crome.synthesis.controller import ControllerSpec, Controller, Mealy
+from crome.synthesis.controller import Mealy, Controller
+from crome.synthesis.controller import generate_controller
+from crome.synthesis.tools import output_folder_synthesis
+from crome.synthesis.tools.atomic_propositions import extract_in_out_atomic_propositions
+from crome.synthesis.tools.crome_io import save_to_file
 from crome.synthesis.world import World
 
 
 class DynamicTransitionBuilder:
 
-    def __init__(self, c1_safety_guarantees: LTL, c2_safety_guarantees: LTL, switch_condition: LTL, world_1: World,
-                 world_2: World, c1_safety_assumptions=LTL("TRUE"), c2_safety_assumptions=LTL("TRUE")):
-        self.rho_1 = self._get_safety_from(c1_safety_guarantees, world_1, c1_safety_assumptions)
-        self.rho_2 = self._get_safety_from(c2_safety_guarantees, world_2, c2_safety_assumptions)
+    def __init__(self, safety_guarantees_1: LTL, safety_guarantees_2: LTL, switch_condition: LTL, world_1: World,
+                 world_2: World, safety_assumptions_1=LTL("TRUE"), safety_assumptions_2=LTL("TRUE")):
+
+        self.assumptions_1, self.guarantees_1 = self._get_safety_from(safety_guarantees_1, world_1, safety_assumptions_1)
+        self.assumptions_2, self.guarantees_2 = self._get_safety_from(safety_guarantees_2, world_2, safety_assumptions_2)
+
+        self.rho_1 = Logic.implies_(str(self.assumptions_1), str(self.guarantees_1))
+        self.rho_2 = Logic.implies_(str(self.assumptions_2), str(self.guarantees_2))
+
         self.switch_condition = switch_condition
 
-        # self.world_1 = world_1
-        # self.world_2 = world_2
-
-        self.transition_world = World(
-            project_name="gridworld",
-            typeset=Typeset(
-                {
-                    BooleanAction(name="greet"),
-                    BooleanAction(name="register"),
-                    BooleanLocation(
-                        name="r1", mutex_group="locations"
-                    ),
-                    BooleanLocation(
-                        name="r2", mutex_group="locations"
-                    ),
-                    BooleanLocation(
-                        name="r3", mutex_group="locations"
-                    ),
-                    BooleanLocation(
-                        name="r4", mutex_group="locations"
-                    ),
-                    BooleanLocation(
-                        name="r5", mutex_group="locations"
-                    ),
-                    BooleanSensor(name="person"),
-                    BooleanContext(name="day", mutex_group="time"),
-                    BooleanContext(name="night", mutex_group="time"),
-                }
-            ),
-        )
-
-        # TODO is this necessary? should we remove it afterwards?
-        # self.world_1.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
-        # self.world_2.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
-        # self.transition_world = world_1
-        self.transition_world.typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
+        transition_typeset = world_1.typeset + world_2.typeset
+        transition_typeset.update({"switch": BooleanAction(name="switch"), "allowed": BooleanAction(name="allowed")})
+        inputs, outputs = transition_typeset.extract_inputs_outputs()
+        self.input_aps, self.output_aps = extract_in_out_atomic_propositions(inputs, outputs)
+        self.i, self.o = transition_typeset.extract_inputs_outputs(string=True)
 
         self.rho_s = self._get_dynamic_transition_rules()
 
-    def build_transition_controller(self, current_pos: LTL, target_pos: LTL,
-                                    controller_name: str = "transition_controller") -> Controller:
+    def build_transition_controller(self, current_pos: str, target_pos: str,
+                                    controller_name: str = "transition_controller") -> Mealy:
         """
         Generates a controller capable of going from current_pos to target_pos,
-        satisfying the safety rules of both contracts in turn
+        satisfying the safety rules of both contracts in turn and the switch condition in between.
         """
-        # TODO rewrite because it's notation abuse, our guarantees already contains the assumptions
-        assumptions = LTL("TRUE", _typeset=self.transition_world.typeset)
-        guarantees = LTL(f"({current_pos}) & {self.rho_s} & (F ({target_pos}))", _typeset=self.transition_world.typeset)
 
-        controller_spec = ControllerSpec.from_ltl(assumptions, guarantees, self.transition_world)
-
-        controller = Controller(name=controller_name, spec=controller_spec, _typeset=self.transition_world.typeset)
-
-        controller.save("dot", controller_name)  # TODO remove after development, only for debugging
-
-        ####  building it manually
-        from crome.synthesis.controller import generate_controller
-        from crome.synthesis.tools.crome_io import save_to_file
-        from crome.synthesis.tools import output_folder_synthesis
-
-        a = str(assumptions)
-        a = "G((! day & night) | (day & ! night))"
-        # g = str(guarantees)
+        a = "G((! day & night) | (day & ! night))"  # TODO take the assumptions from the contracts
         g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F (switch & ({target_pos})))"
-        i, o = self.transition_world.typeset.extract_inputs_outputs(string=True)
-        i = ','.join(i)
-        o = ','.join(o)
-        _, automaton, _ = generate_controller(a, g, i, o)
+        realizable, automaton, synth_time = Controller.generate_from_spec(a, g, ','.join(self.i), ','.join(self.o))
+
         spot_automaton = spot.automaton(automaton)
+        pydotgraph = pydot.graph_from_dot_data(spot_automaton.to_str("dot"))[0]
+        mealy = Mealy.from_pydotgraph(
+            pydotgraph, input_aps=self.input_aps, output_aps=self.output_aps
+        )
+
+        # TODO remove, only for debugging
         save_to_file(
-            file_content=spot_automaton.to_str("dot"), file_name="a_mano.dot",
+            file_content=spot_automaton.to_str("dot"), file_name=f"{controller_name}.dot",
             absolute_folder_path=output_folder_synthesis
         )
-        gra = pydot.graph_from_dot_file("crome/output/a_mano.dot")[0]
-        gra.write_png("a_mano.png")
+        gra = pydot.graph_from_dot_file(f"crome/output/{controller_name}.dot")[0]
+        gra.write_png(f"{output_folder_synthesis}/{controller_name}.png")
         ####
 
-        return controller
+        return mealy
 
     def _get_dynamic_transition_rules(self):
         """
@@ -108,7 +74,6 @@ class DynamicTransitionBuilder:
         t1 = Logic.or_([self.rho_1, self.rho_2])
         t2 = f"switch -> {self.rho_2}"
 
-        # TODO the typeset defining this bridge should be world 1, 2 or a mix of both?
         s1 = "(!switch & X(switch)) -> X(allowed)"
         s2 = "switch -> X(switch)"
         s3 = f"!{self.rho_1} -> X(switch)"
@@ -127,7 +92,7 @@ class DynamicTransitionBuilder:
 
     @staticmethod
     def _get_safety_from(contract_guarantees: LTL, world: World,
-                         contract_assumptions=LTL("TRUE")) -> str:
+                         contract_assumptions=LTL("TRUE")):
         typeset_c, typeset_u = world.typeset.split_controllable_uncontrollable
 
         # assumptions
@@ -155,4 +120,4 @@ class DynamicTransitionBuilder:
             [r[0] for r in g_rules]
         )))
 
-        return Logic.implies_(str(assumptions), str(guarantees))
+        return assumptions, guarantees
