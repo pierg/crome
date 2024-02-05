@@ -12,8 +12,6 @@ if __name__ == '__main__':
         project_name="gridworld",
         typeset=Typeset(
             {
-                BooleanAction(name="greet"),
-                BooleanAction(name="register"),
                 BooleanLocation(
                     name="r1", mutex_group="locations", adjacency_set={"r2", "r5"}
                 ),
@@ -31,7 +29,6 @@ if __name__ == '__main__':
                     mutex_group="locations",
                     adjacency_set={"r1", "r2", "r3", "r4"},
                 ),
-                BooleanSensor(name="person"),
                 BooleanContext(name="day", mutex_group="time"),
                 BooleanContext(name="night", mutex_group="time"),
             }

@@ -6,10 +6,8 @@ import spot
 from crome.logic.specification.rules_extractors import extract_mutex_rules, extract_adjacency_rules
 from crome.logic.specification.temporal import LTL
 from crome.logic.tools.logic import Logic
-from crome.logic.typelement.robotic import BooleanAction, BooleanLocation, BooleanSensor, BooleanContext
-from crome.logic.typeset import Typeset
+from crome.logic.typelement.robotic import BooleanAction
 from crome.synthesis.controller import Mealy, Controller
-from crome.synthesis.controller import generate_controller
 from crome.synthesis.tools import output_folder_synthesis
 from crome.synthesis.tools.atomic_propositions import extract_in_out_atomic_propositions
 from crome.synthesis.tools.crome_io import save_to_file
@@ -19,13 +17,13 @@ from crome.synthesis.world import World
 class DynamicTransitionBuilder:
 
     def __init__(self, safety_guarantees_1: LTL, safety_guarantees_2: LTL, switch_condition: LTL, world_1: World,
-                 world_2: World, safety_assumptions_1=LTL("TRUE"), safety_assumptions_2=LTL("TRUE")):
+                 world_2: World, user_spec_safety_assumptions_2=LTL("TRUE")):
+        """
+        :param user_spec_safety_assumptions_2: LTL, user-specified "extra" safety assumptions for contract 2 (target)
+        """
 
-        self.assumptions_1, self.guarantees_1 = self._get_safety_from(safety_guarantees_1, world_1, safety_assumptions_1)
-        self.assumptions_2, self.guarantees_2 = self._get_safety_from(safety_guarantees_2, world_2, safety_assumptions_2)
-
-        self.rho_1 = Logic.implies_(str(self.assumptions_1), str(self.guarantees_1))
-        self.rho_2 = Logic.implies_(str(self.assumptions_2), str(self.guarantees_2))
+        _, self.rho_s_1 = self._get_safety_from(safety_guarantees_1, world_1)
+        self.rho_e_2, self.rho_s_2 = self._get_safety_from(safety_guarantees_2, world_2, user_spec_safety_assumptions_2)
 
         self.switch_condition = switch_condition
 
@@ -44,7 +42,7 @@ class DynamicTransitionBuilder:
         satisfying the safety rules of both contracts in turn and the switch condition in between.
         """
 
-        a = "G((! day & night) | (day & ! night))"  # TODO take the assumptions from the contracts
+        a = self.rho_e_2  # TODO check all logic against the definitions on the paper and see why in/outs are being inverted
         g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F (switch & ({target_pos})))"
         realizable, automaton, synth_time = Controller.generate_from_spec(a, g, ','.join(self.i), ','.join(self.o))
 
@@ -71,21 +69,16 @@ class DynamicTransitionBuilder:
         Section 4.1 Bridge-Controller Construction
         Dynamic Update for Synthesized GR(1) Controllers, Maoz, Amram paper.
         """
-        t1 = Logic.or_([self.rho_1, self.rho_2])
-        t2 = f"switch -> {self.rho_2}"
+        t1 = Logic.or_([self.rho_s_1, self.rho_s_2])
+        t2 = f"switch -> {self.rho_s_2}"
 
         s1 = "(!switch & X(switch)) -> X(allowed)"
         s2 = "switch -> X(switch)"
-        s3 = f"!{self.rho_1} -> X(switch)"
-        p1 = (f"X(allowed) -> (({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) & "
-              f"(({self.switch_condition} & {self.rho_2}) | (allowed & {self.rho_2})) -> X(allowed)")
+        s3 = f"!{self.rho_s_1} -> X(switch)"
+        p1 = (f"X(allowed) -> (({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) & "
+              f"(({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) -> X(allowed)")
         # TODO is there an iff?
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
-
-        ####  new try
-        # s1 = LTL("(~switch & X(switch)) -> allowed", _typeset=self.transition_world.typeset)
-        # p1 = LTL(f"(({self.switch_condition}) & ({self.rho_2})) -> X(allowed)", _typeset=self.transition_world.typeset)
-        ####
 
         rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
         return rho_s
