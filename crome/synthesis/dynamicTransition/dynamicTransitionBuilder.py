@@ -44,6 +44,7 @@ class DynamicTransitionBuilder:
 
         a = self.rho_e_2  # TODO check all logic against the definitions on the paper and see why in/outs are being inverted
         g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F (switch & ({target_pos})))"
+        #g = f"(({current_pos}) & ! switch & ! allowed)  & (F (switch & ({target_pos})))"
         realizable, automaton, synth_time = Controller.generate_from_spec(a, g, ','.join(self.i), ','.join(self.o))
 
         spot_automaton = spot.automaton(automaton)
@@ -57,7 +58,7 @@ class DynamicTransitionBuilder:
             file_content=spot_automaton.to_str("dot"), file_name=f"{controller_name}.dot",
             absolute_folder_path=output_folder_synthesis
         )
-        gra = pydot.graph_from_dot_file(f"crome/output/{controller_name}.dot")[0]
+        gra = pydot.graph_from_dot_file(f"{output_folder_synthesis}/{controller_name}.dot")[0]
         gra.write_png(f"{output_folder_synthesis}/{controller_name}.png")
         ####
 
@@ -74,13 +75,14 @@ class DynamicTransitionBuilder:
 
         s1 = "(!switch & X(switch)) -> X(allowed)"
         s2 = "switch -> X(switch)"
-        s3 = f"!{self.rho_s_1} -> X(switch)"
+        s3 = f"!({self.rho_s_1}) -> X(switch)"
         p1 = (f"X(allowed) -> (({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) & "
               f"(({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) -> X(allowed)")
         # TODO is there an iff?
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
 
-        rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
+        # rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
+        rho_s = Logic.and_([str(f) for f in [t1, t2, s1,s2,s3, p1]])
         return rho_s
 
     @staticmethod
