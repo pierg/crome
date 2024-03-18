@@ -85,7 +85,8 @@ if __name__ == '__main__':
     current_pos = "r1 & !r2 & !r3 & !r4 & !r5"
     target_pos = "!r1 & !r2 & !r3 & r4 & !r5"
 
-    dtb_ctx1_to_ctx2 = DynamicTransitionBuilder(day_patrol_safety, night_patrol_safety, switch_condition=LTL("!r1 & r2 & !r3 & !r4 & !r5"),
+    dtb_ctx1_to_ctx2 = DynamicTransitionBuilder(day_patrol_safety, night_patrol_safety,
+                                                switch_condition=LTL("!r1 & r2 & !r3 & !r4 & !r5"),
                                                 world_1=world1, world_2=world2)
 
     transition_controller = dtb_ctx1_to_ctx2.build_transition_controller(current_pos, target_pos)
