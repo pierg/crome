@@ -50,7 +50,7 @@ goals = {
         id="g1",
         description="drop only when you are in the garbage location and you're holding an object",
         contract=Contract(
-            _guarantees=LTL(
+            _liveness_guarantees=LTL(
                 InstantaneousReaction(pre="dp", post="k3 & hl"), _typeset=w_ref.typeset
             )
         ),

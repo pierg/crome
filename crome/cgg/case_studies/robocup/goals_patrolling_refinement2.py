@@ -13,20 +13,20 @@ from crome.logic.specification.temporal import LTL
 goals_top = {
     Goal(
         id="init",
-        contract=Contract(_guarantees=LTL(Init("lb"), _typeset=w_top.typeset)),
+        contract=Contract(_liveness_guarantees=LTL(Init("lb"), _typeset=w_top.typeset)),
         world=w_top,
     ),
     Goal(
         id="order_patrol",
         contract=Contract(
-            _guarantees=LTL(OrderedPatrolling(["lb", "lv"]), _typeset=w_top.typeset)
+            _liveness_guarantees=LTL(OrderedPatrolling(["lb", "lv"]), _typeset=w_top.typeset)
         ),
         world=w_top,
     ),
     Goal(
         id="cleanup",
         contract=Contract(
-            _guarantees=LTL(InstantaneousReaction("oj", "hl"), _typeset=w_top.typeset)
+            _liveness_guarantees=LTL(InstantaneousReaction("oj", "hl"), _typeset=w_top.typeset)
         ),
         world=w_top,
     ),
@@ -34,7 +34,7 @@ goals_top = {
         id="drop",
         description="drop only when you are in the garbage location and you're holding an object",
         contract=Contract(
-            _guarantees=LTL(
+            _liveness_guarantees=LTL(
                 InstantaneousReaction(pre="lg & oj", post="dp"), _typeset=w_ref.typeset
             )
         ),
@@ -43,7 +43,7 @@ goals_top = {
     Goal(
         id="remove",
         description="remove all the objects continuously",
-        contract=Contract(_guarantees=LTL(InfOft("!ob"), _typeset=w_ref.typeset)),
+        contract=Contract(_liveness_guarantees=LTL(InfOft("!ob"), _typeset=w_ref.typeset)),
         world=w_ref,
     ),
 }
@@ -54,13 +54,13 @@ goals.realize()
 goals_ref = {
     Goal(
         id="init",
-        contract=Contract(_guarantees=LTL(Init("b1"), _typeset=w_ref.typeset)),
+        contract=Contract(_liveness_guarantees=LTL(Init("b1"), _typeset=w_ref.typeset)),
         world=w_ref,
     ),
     Goal(
         id="g1",
         contract=Contract(
-            _guarantees=LTL(
+            _liveness_guarantees=LTL(
                 OrderedPatrolling(["(b1 | b2 | b3)", "(l1 | l2 | l3 | l4 | l5 | l6)"]),
                 _typeset=w_ref.typeset,
             )
@@ -70,7 +70,7 @@ goals_ref = {
     Goal(
         id="g1",
         contract=Contract(
-            _guarantees=LTL(OrderedPatrolling(["b2", "l2"]), _typeset=w_ref.typeset)
+            _liveness_guarantees=LTL(OrderedPatrolling(["b2", "l2"]), _typeset=w_ref.typeset)
         ),
         world=w_ref,
     ),

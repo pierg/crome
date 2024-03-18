@@ -59,7 +59,7 @@ class Goal:
 
     def realize(self):
         cspec = ControllerSpec.from_ltl(
-            self.contract.assumptions, self.contract.guarantees, self.world
+            self.contract.liveness_assumptions, self.contract.liveness_guarantees, self.world
         )
         self._controller = Controller(
             name=f"ctrl_{self.id}", spec=cspec, _typeset=self.contract.typeset
@@ -77,8 +77,8 @@ class Goal:
 
         # We put the contracts with their LTL value only.
         contract = self.contract
-        json_assumptions = contract.assumptions.export_to_json()
-        json_guarantees = contract.guarantees.export_to_json()
+        json_assumptions = contract.liveness_assumptions.export_to_json()
+        json_guarantees = contract.liveness_guarantees.export_to_json()
 
         json_content["contract"]["assumptions"] = [json_assumptions]
         json_content["contract"]["guarantees"] = [json_guarantees]

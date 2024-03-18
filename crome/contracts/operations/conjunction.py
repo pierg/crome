@@ -10,16 +10,16 @@ def conjunction(contracts: set[Contract]) -> Contract:
         raise Exception("No contract specified in the conjunction")
 
     contract_list = list(contracts)
-    new_assumptions = deepcopy(contract_list[0].assumptions)
-    new_guarantees = deepcopy(contract_list[0].guarantees)
+    new_assumptions = deepcopy(contract_list[0].liveness_assumptions)
+    new_guarantees = deepcopy(contract_list[0].liveness_guarantees)
 
     for contract in contract_list[1:]:
-        new_assumptions |= contract.assumptions
-        new_guarantees &= contract.guarantees
+        new_assumptions |= contract.liveness_assumptions
+        new_guarantees &= contract.liveness_guarantees
 
     return Contract.from_operation(
-        guarantees=new_guarantees,
-        assumptions=new_assumptions,
+        liveness_guarantees=new_guarantees,
+        liveness_assumptions=new_assumptions,
         generated_by=ContractOperation.CONJUNCTION,
         generators=contracts,
     )

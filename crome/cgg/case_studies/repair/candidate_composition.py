@@ -99,7 +99,7 @@ goal_to_refine = Goal(
     id="ordered_patrolling",
     contract=Contract(
         # _assumptions=LTL(GF("s")),
-        _guarantees=LTL(f'{OrderedPatrolling(["lf", "lb"])}', abs_world.typeset)
+        _liveness_guarantees=LTL(f'{OrderedPatrolling(["lf", "lb"])}', abs_world.typeset)
     ),
     world=abs_world,
 )

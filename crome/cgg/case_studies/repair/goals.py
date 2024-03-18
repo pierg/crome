@@ -20,8 +20,8 @@ goals = {
         id="wave",
         description="Always, immediately wave only when seeing a person",
         contract=Contract(
-            _assumptions=LTL(GF("ps"), w.typeset),
-            _guarantees=LTL(BoundReaction("ps", "wa"), w.typeset),
+            _liveness_assumptions=LTL(GF("ps"), w.typeset),
+            _liveness_guarantees=LTL(BoundReaction("ps", "wa"), w.typeset),
         ),
         world=w,
     ),
@@ -35,7 +35,7 @@ goals = {
         id="front_patrolling_impl",
         description="Patrol front location in strict order",
         contract=Contract(
-            _guarantees=LTL(
+            _liveness_guarantees=LTL(
                 StrictOrderedPatrolling(["l1", "l2", "l4", "l3"]), w.typeset
             )
         ),
@@ -50,7 +50,7 @@ goals = {
     Goal(
         id="visit_back_impl",
         description="Patrol back location",
-        contract=Contract(_guarantees=LTL(Patrolling(["l5"]), w.typeset)),
+        contract=Contract(_liveness_guarantees=LTL(Patrolling(["l5"]), w.typeset)),
         world=w,
     ),
     # Goal(
@@ -64,8 +64,8 @@ goals = {
         id="charge_impl",
         description="Charge battery when in the front",
         contract=Contract(
-            _assumptions=LTL(GF("lc"), w.typeset),
-            _guarantees=LTL(PromptReaction("l2", "l2 & ch"), w.typeset),
+            _liveness_assumptions=LTL(GF("lc"), w.typeset),
+            _liveness_guarantees=LTL(PromptReaction("l2", "l2 & ch"), w.typeset),
         ),
         world=w,
     ),

@@ -42,8 +42,8 @@ class DynamicTransitionBuilder:
         satisfying the safety rules of both contracts in turn and the switch condition in between.
         """
 
-        a = self.rho_e_2  # TODO check all logic against the definitions on the paper and see why in/outs are being inverted
-        g = f"(({current_pos}) & ! switch & ! allowed) & {self.rho_s} & (F (switch & ({target_pos})))"
+        a = self.rho_e_2
+        g = f"(({current_pos}) & ! switch & ! allowed) & ({self.rho_s}) & (F (switch & ({target_pos})))"
         #g = f"(({current_pos}) & ! switch & ! allowed)  & (F (switch & ({target_pos})))"
         realizable, automaton, synth_time = Controller.generate_from_spec(a, g, ','.join(self.i), ','.join(self.o))
 
@@ -71,18 +71,16 @@ class DynamicTransitionBuilder:
         Dynamic Update for Synthesized GR(1) Controllers, Maoz, Amram paper.
         """
         t1 = Logic.or_([self.rho_s_1, self.rho_s_2])
-        t2 = f"switch -> {self.rho_s_2}"
+        t2 = f"switch -> ({self.rho_s_2})"
 
         s1 = "(!switch & X(switch)) -> X(allowed)"
         s2 = "switch -> X(switch)"
         s3 = f"!({self.rho_s_1}) -> X(switch)"
-        p1 = (f"X(allowed) -> (({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) & "
-              f"(({self.switch_condition} & {self.rho_s_2}) | (allowed & {self.rho_s_2})) -> X(allowed)")
-        # TODO is there an iff?
+        p1 = f"X(allowed) <-> ((({self.switch_condition}) & ({self.rho_s_2})) | (allowed & ({self.rho_s_2})))"
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
 
         # rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
-        rho_s = Logic.and_([str(f) for f in [t1, t2, s1,s2,s3, p1]])
+        rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1]])
         return rho_s
 
     @staticmethod

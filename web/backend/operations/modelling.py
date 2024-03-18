@@ -187,8 +187,8 @@ class Modelling:
         json_file.close()
 
         contract = Contract(
-            _assumptions=lists_with_and_operators[0],
-            _guarantees=lists_with_and_operators[1],
+            _liveness_assumptions=lists_with_and_operators[0],
+            _liveness_guarantees=lists_with_and_operators[1],
         )
         goal_id = json_obj["id"]
         new_goal = crome_cgg_goal.Goal(

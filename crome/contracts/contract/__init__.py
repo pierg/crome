@@ -23,8 +23,10 @@ class ContractOperation(Enum):
 
 @dataclass(frozen=True)
 class Contract:
-    _guarantees: LTL
-    _assumptions: LTL = LTL("TRUE")
+    _liveness_guarantees: LTL
+    _liveness_assumptions: LTL = LTL("TRUE")
+    _safety_guarantees: LTL = LTL("TRUE")
+    _safety_assumptions: LTL = LTL("TRUE")
     _unsaturated: bool = field(repr=False, default=True)
 
     _generated_by: ContractOperation = field(
@@ -36,23 +38,23 @@ class Contract:
     _saturation: LTL | None = field(init=False, repr=False, default=None)
 
     def __post_init__(self):
-        if self._unsaturated and not self.assumptions.is_valid:
-            object.__setattr__(self, "_saturation", deepcopy(self._assumptions))
+        if self._unsaturated and not self.liveness_assumptions.is_valid:
+            object.__setattr__(self, "_saturation", deepcopy(self._liveness_assumptions))
 
         """Check Feasibility"""
-        if not (self._assumptions & self._guarantees).is_satisfiable:
+        if not (self._liveness_assumptions & self._liveness_guarantees).is_satisfiable:
             find_inconsistencies_operation(self)
 
     @classmethod
     def from_operation(
         cls,
-        guarantees: LTL,
-        assumptions: LTL,
+        liveness_guarantees: LTL,
+        liveness_assumptions: LTL,
         generated_by: ContractOperation,
         generators: set[Contract] | dict[str, Contract],
     ) -> Contract:
         new_contract = cls(
-            _guarantees=guarantees, _assumptions=assumptions, _unsaturated=False
+            _liveness_guarantees=liveness_guarantees, _liveness_assumptions=liveness_assumptions, _unsaturated=False
         )
         object.__setattr__(new_contract, "_generated_by", generated_by)
         object.__setattr__(new_contract, "_generators", generators)
@@ -60,25 +62,25 @@ class Contract:
         return new_contract
 
     @property
-    def assumptions(self) -> LTL:
-        return self._assumptions
+    def liveness_assumptions(self) -> LTL:
+        return self._liveness_assumptions
 
     @property
-    def guarantees(self) -> LTL:
+    def liveness_guarantees(self) -> LTL:
         """Returning saturated guarantee."""
         if self._saturation is not None:
-            return self._saturation >> self._guarantees
+            return self._saturation >> self._liveness_guarantees
         else:
-            return self._guarantees
+            return self._liveness_guarantees
 
     @property
-    def unsaturated_guarantees(self) -> LTL:
+    def unsaturated_liveness_guarantees(self) -> LTL:
         """Returning unsaturated saturated guarantee."""
-        return self._guarantees
+        return self._liveness_guarantees
 
     @property
     def typeset(self) -> Typeset:
-        return self._guarantees.typeset + self._assumptions.typeset
+        return self._liveness_guarantees.typeset + self._liveness_assumptions.typeset
 
     @property
     def generators(
@@ -88,12 +90,12 @@ class Contract:
 
     def __str__(self):
         res: list[str] = []
-        if not self.assumptions.is_true_expression:
-            res.append("ASSUMPTIONS")
-            res.append(f"\t{str(self.assumptions)}")
-        if not self.guarantees.is_true_expression:
-            res.append("GUARANTEES")
-            res.append(f"\t{str(self.guarantees)}")
+        if not self.liveness_assumptions.is_true_expression:
+            res.append("LIVENESS ASSUMPTIONS")
+            res.append(f"\t{str(self.liveness_assumptions)}")
+        if not self.liveness_guarantees.is_true_expression:
+            res.append("LIVENESS GUARANTEES")
+            res.append(f"\t{str(self.liveness_guarantees)}")
         return "\n".join(res)
 
     """Refinement"""
@@ -103,8 +105,9 @@ class Contract:
 
         True if self is a refinement of other
         """
-        cond_a = self.assumptions >= other.assumptions
-        cond_g = self.guarantees <= other.guarantees
+        # TODO: Do we need to take into account the safety condition as well for the refinement?
+        cond_a = self.liveness_assumptions >= other.liveness_assumptions
+        cond_g = self.liveness_guarantees <= other.liveness_guarantees
         return cond_a and cond_g
 
     def __eq__(self: Contract, other: object):
@@ -119,7 +122,7 @@ class Contract:
         return cond_a and cond_g
 
     def __hash__(self):
-        return hash(f"{str(self.assumptions)} -> {str(self.guarantees)}")
+        return hash(f"{str(self.liveness_assumptions)} -> {str(self.liveness_guarantees)}")
 
     def __repr__(self):
-        return f"{str(self.assumptions)} -> {str(self.guarantees)}"
+        return f"{str(self.liveness_assumptions)} -> {str(self.liveness_guarantees)}"

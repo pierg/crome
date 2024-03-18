@@ -8,7 +8,7 @@ from crome.logic.specification.temporal import LTL
 g_top = Goal(
     id="order_patrol",
     contract=Contract(
-        _guarantees=LTL(StrictOrderedPatrolling(["lb", "lv"]), _typeset=w_top.typeset)
+        _liveness_guarantees=LTL(StrictOrderedPatrolling(["lb", "lv"]), _typeset=w_top.typeset)
     ),
     world=w_top,
 )
@@ -16,7 +16,7 @@ g_top = Goal(
 g_ref = Goal(
     id="order_patrol_ref",
     contract=Contract(
-        _guarantees=LTL(StrictOrderedPatrolling(["b2", "l2"]), _typeset=w_ref.typeset)
+        _liveness_guarantees=LTL(StrictOrderedPatrolling(["b2", "l2"]), _typeset=w_ref.typeset)
     ),
     world=w_ref,
 )

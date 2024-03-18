@@ -39,7 +39,7 @@ ordered_patrolling_top = LTL(
 )
 print(latexit(ordered_patrolling_top.formula))
 
-top_spec = Goal(contract=Contract(_guarantees=ordered_patrolling_top))
+top_spec = Goal(contract=Contract(_liveness_guarantees=ordered_patrolling_top))
 
 
 print(f"TOP_SPEC:\n{top_spec}")
@@ -85,7 +85,7 @@ lib_world = World(
 
 lib_spec = Goal(
     contract=Contract(
-        _guarantees=LTL(
+        _liveness_guarantees=LTL(
             _init_formula=Patrolling(["l5", "l1"]), _typeset=lib_world.typeset
         )
     )
@@ -100,13 +100,13 @@ print(lib_spec <= top_spec)
 
 sep = g_separation(lib_spec, top_spec)
 print(f"SEPARATION:\n{sep}")
-print(latexit(sep.contract.assumptions.formula))
-print(latexit(sep.contract.guarantees.formula))
+print(latexit(sep.contract.liveness_assumptions.formula))
+print(latexit(sep.contract.liveness_guarantees.formula))
 
 new = g_merging({top_spec, sep})
 print(f"MERGING RES:\n{new}")
-print(latexit(new.contract.assumptions.formula))
-print(latexit(new.contract.guarantees.formula))
+print(latexit(new.contract.liveness_assumptions.formula))
+print(latexit(new.contract.liveness_guarantees.formula))
 
 print("\n\n")
 print(lib_spec)

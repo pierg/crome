@@ -10,19 +10,19 @@ def quotient(dividend: Contract, divisor: Contract) -> Contract:
     # concretization({dividend, divisor})
 
     c = dividend
-    a = c.assumptions
-    g = c.guarantees
+    a = c.liveness_assumptions
+    g = c.liveness_guarantees
 
     c1 = divisor
-    a1 = c1.assumptions
-    g1 = c1.guarantees
+    a1 = c1.liveness_assumptions
+    g1 = c1.liveness_guarantees
 
     a2 = a & g1
     g2 = g & a1 | ~(a & g1)
 
     return Contract.from_operation(
-        guarantees=g2,
-        assumptions=a2,
+        liveness_guarantees=g2,
+        liveness_assumptions=a2,
         generated_by=ContractOperation.QUOTIENT,
         generators={"dividend": dividend, "divisor": divisor},
     )
