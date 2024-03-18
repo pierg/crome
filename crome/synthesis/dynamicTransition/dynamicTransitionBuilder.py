@@ -77,11 +77,11 @@ class DynamicTransitionBuilder:
         s3 = f"!({self.rho_s_1}) -> X(switch)"
         p1 = f"X(allowed) <-> ((({self.switch_condition}) & ({self.rho_s_2})) | (allowed & ({self.rho_s_2})))"
         # ^ allowed′↔((cond ∧ ρs 2)∨(allowed ∧ ρs 2))
-        p2 = "1"
-        # p2 = f"F({self.switch_condition})"
+        # p2 = "1"
+        p2 = f"F({self.switch_condition})"
         # # ^ TODO this is not in the paper, but it is needed to ensure the switch_condition is eventually true
 
-        rho_s = Logic.and_([str(f) for f in [t1, t2, s1, s2, s3, p1, p2]])
+        rho_s = Logic.and_([str(f) for f in [self.rho_s_2, s1, s2, s3, p1, p2]])
         return rho_s
 
     @staticmethod
