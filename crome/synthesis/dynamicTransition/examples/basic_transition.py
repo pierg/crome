@@ -7,6 +7,7 @@ from crome.synthesis.world import World
 
 
 if __name__ == '__main__':
+    ## this is the overleaf board robot example
     # WORLD MODELING
     original = World(
         project_name="gridworld",
@@ -35,7 +36,7 @@ if __name__ == '__main__':
         ),
     )
 
-    # TODO world1 and world2 could have different adjacency sets (aka safety rules)
+    # world1 and world2 could have different adjacency sets (aka safety rules)
     world1 = original
 
     world2 = World(
